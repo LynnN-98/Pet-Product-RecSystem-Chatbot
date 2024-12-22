@@ -1,0 +1,15 @@
+artifact_uri: file:///home/sagemaker-user/Pet-Product-RecSystem-Chatbot/LLM/mlruns/0/948516a996574432b4397aa611358b81/artifacts
+end_time: 1734746373086
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 948516a996574432b4397aa611358b81
+run_name: /home/sagemaker-user/Models/question_type_classifier
+run_uuid: 948516a996574432b4397aa611358b81
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1734744573065
+status: 3
+tags: []
+user_id: sagemaker-user
