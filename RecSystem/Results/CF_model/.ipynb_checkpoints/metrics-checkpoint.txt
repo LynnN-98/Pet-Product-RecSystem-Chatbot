@@ -1,0 +1,24 @@
+Evaluation Metrics for Explicit Feedback Models
+=======================================
+
+Model: SVD
+
+RMSE: 1.8507
+ROC AUC: 0.8627
+
+
+Model: SVD++
+
+RMSE: 1.8464
+ROC AUC: 0.8598
+
+
+Model: SlopeOne
+
+RMSE: 2.3214
+ROC AUC: 0.5391
+
+Model: CoClustering
+
+RMSE: 1.9400
+ROC AUC: 0.8226
