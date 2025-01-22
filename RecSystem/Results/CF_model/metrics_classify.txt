@@ -1,0 +1,66 @@
+Evaluation Metrics for Explicit Feedback Models
+========================
+
+Model: SVD
+
+Evaluation Metrics for top-5:
+Precision@5: 0.8018
+Recall@5: 0.7227
+F1-score@5: 0.7365
+
+Evaluation Metrics for top-10:
+Precision@10: 0.5535
+Recall@10: 0.9404
+F1-score@10: 0.6755
+
+Evaluation Metrics for top-15:
+Precision@15: 0.3960
+Recall@15: 0.9870
+F1-score@15: 0.5497
+RMSE: 1.8507
+ROC AUC: 0.8627
+
+------------------------
+
+Model: SVD++
+
+Evaluation Metrics for top-5:
+Precision@5: 0.8000
+Recall@5: 0.7223
+F1-score@5: 0.7355
+
+Evaluation Metrics for top-10:
+Precision@10: 0.5548
+Recall@10: 0.9422
+F1-score@10: 0.6770
+
+Evaluation Metrics for top-15:
+Precision@15: 0.3981
+Recall@15: 0.9903
+F1-score@15: 0.5523
+RMSE: 1.8464
+ROC AUC: 0.8598
+
+------------------------
+
+Model: CoClustering
+
+Evaluation Metrics for top-5:
+Precision@5: 0.7894
+Recall@5: 0.7189
+F1-score@5: 0.7292
+
+Evaluation Metrics for top-10:
+Precision@10: 0.5563
+Recall@10: 0.9457
+F1-score@10: 0.6793
+
+Evaluation Metrics for top-15:
+Precision@15: 0.4006
+Recall@15: 0.9942
+F1-score@15: 0.5554
+RMSE: 1.9400
+ROC AUC: 0.8226
+
+------------------------
+
