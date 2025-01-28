@@ -60,7 +60,14 @@ def load_model_in_background():
     model_loaded = True
     print(Fore.GREEN + "Chat model loaded!\n" + Style.RESET_ALL)
 
-
+def ljust_unicode(s, width, fillchar=" "):
+    """Left-align string, considering wide characters"""
+    fill_width = width - wcswidth(s)
+    if fill_width > 0:
+        return s + fillchar * fill_width
+    else:
+        return s
+        
 def load_user_passwords():
     """Load registered user password information"""
     users_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_passwords.pkl")
@@ -179,3 +186,140 @@ def login():
 
     print(Fore.RED + "Multiple invalid user ID inputs. Exiting program." + Style.RESET_ALL)
     return None
+
+
+def display_hot_products(top_5_df):
+    """Display hot recommended products in a nice format"""
+    print(Fore.GREEN + "=== Hot Recommendations ===" + Style.RESET_ALL)
+    if top_5_df.empty:
+        print("Sorry, there are no hot products at the moment.")
+        return
+
+    for idx, row in top_5_df.iterrows():
+        # Define box characters
+        box_width = 60
+        top_border = "┌" + "─" * box_width + "┐"
+        middle_border = "├" + "─" * box_width + "┤"
+        bottom_border = "└" + "─" * box_width + "┘"
+
+        print(Fore.YELLOW + top_border + Style.RESET_ALL)
+        title = f"│  📦 Product {idx + 1}"
+        print(Fore.YELLOW + ljust_unicode(title, box_width + 1) + "│" + Style.RESET_ALL)
+        print(Fore.YELLOW + middle_border + Style.RESET_ALL)
+
+        # Get each field's value and handle possible missing values
+        asin = f"🏷️ ASIN: {row.get('parent_asin', 'N/A')}"
+
+        description = row.get("description", "")
+        if isinstance(description, list):
+            description_str = " ".join(map(str, description))
+        else:
+            description_str = str(description)
+
+        details = row.get("details", "")
+        if isinstance(details, dict):
+            details_str = ", ".join([f"{k}: {v}" for k, v in details.items()])
+        else:
+            details_str = str(details)
+
+        categories = row.get("categories", "")
+        if isinstance(categories, list):
+            categories_str = " > ".join(map(str, categories))
+        else:
+            categories_str = str(categories)
+
+        average_rating = row.get("average_rating", "N/A")
+        rating_number = row.get("rating_number", "N/A")
+        popularity_score = row.get("popularity_score", "N/A")
+
+        # Use textwrap module to handle long text wrapping
+        wrap_width = box_width - 2  # Leave space for border characters
+        description_lines = textwrap.wrap(
+            f"📝 Description: {description_str}", width=wrap_width, replace_whitespace=False
+        )
+        details_lines = textwrap.wrap(
+            f"🔍 Details: {details_str}", width=wrap_width, replace_whitespace=False
+        )
+        categories_lines = textwrap.wrap(
+            f"📂 Categories: {categories_str}", width=wrap_width, replace_whitespace=False
+        )
+
+        # Print product information
+        print(Fore.YELLOW + ljust_unicode(f"│ {asin}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        for line in description_lines:
+            print(Fore.YELLOW + ljust_unicode(f"│ {line}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        for line in details_lines:
+            print(Fore.YELLOW + ljust_unicode(f"│ {line}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        for line in categories_lines:
+            print(Fore.YELLOW + ljust_unicode(f"│ {line}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        rating = f"⭐ Average Rating: {average_rating} out of 5 stars"
+        print(Fore.YELLOW + ljust_unicode(f"│ {rating}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        rating_num = f"👥 Number of Ratings: {rating_number}"
+        print(Fore.YELLOW + ljust_unicode(f"│ {rating_num}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        popularity = f"🔥 Popularity Score: {popularity_score}"
+        print(Fore.YELLOW + ljust_unicode(f"│ {popularity}", box_width + 1) + "│" + Style.RESET_ALL)
+
+        print(Fore.YELLOW + bottom_border + Style.RESET_ALL)
+        print("\n")
+
+
+def generate_recommendation_response(
+    user_id,
+    user_factors,
+    item_factors,
+    user_id_map,
+    item_id_map,
+    index,
+    loaded_recommendations,
+    filtered_data,
+    tfidf_vectorizer,
+    tfidf_matrix,
+):
+    """Generate recommendation chat response"""
+    recommendations_list = recommend(
+        user_id, user_factors, item_factors, user_id_map, item_id_map, index, loaded_recommendations
+    )
+
+    user_keywords = None  # Initialize variable
+
+    if recommendations_list:
+        # Collaborative filtering has recommendation results
+        formatted_recommendations = ""
+        for idx, asin in enumerate(recommendations_list[:5], 1):
+            formatted_recommendations += f"{idx}. ASIN: {asin}\n"
+        response = f"""
+Assistant: Certainly! Based on your interests, I recommend the following products:
+{formatted_recommendations}
+Assistant: Would you like to know more details about any of these products? If so, please enter the corresponding number (e.g., 1).
+"""
+    else:
+        # No recommendation results from collaborative filtering; use content-based filtering
+        print(Fore.YELLOW + "Since you're a new user, we need some information to recommend products for you." + Style.RESET_ALL)
+        user_keywords = input(Fore.BLUE + "could you tell me what kind of products you're looking for? For example, 'dog toys' or 'cat food': " + Style.RESET_ALL).strip()
+        if not user_keywords:
+            print(Fore.RED + "No keywords entered; unable to provide recommendations." + Style.RESET_ALL)
+            return "Sorry, unable to provide recommendations.", [], None
+        content_recommendations = content_based_recommendation(
+            user_keywords, tfidf_vectorizer, tfidf_matrix, filtered_data, top_k=5
+        )
+        if content_recommendations:
+            recommendations_list = content_recommendations
+            formatted_recommendations = ""
+            for idx, asin in enumerate(recommendations_list, 1):
+                formatted_recommendations += f"{idx}. ASIN: {asin}\n"
+            response = f"""
+Assistant: Based on your keywords "{user_keywords}", I recommend the following products:
+{formatted_recommendations}
+Assistant: Would you like to know more details about any of these products? If so, please enter the corresponding number (e.g., 1).
+"""
+        else:
+            response = "Sorry, unable to find products related to your keywords."
+            recommendations_list = []
+
+    return response.strip(), recommendations_list, user_keywords
