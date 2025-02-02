@@ -8,12 +8,12 @@ from scipy import sparse
 from sklearn.metrics.pairwise import cosine_similarity
 
 def load_recommendation_system():
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    RECOMMENDATIONS_DIR = os.path.join(BASE_DIR, '../recommendations')
+    RECOMMENDATIONS_DIR = '/home/sagemaker-user/Pet-Product-RecSystem-Chatbot/Chatbot/recommendations/'
+    MODEL_DIR = '/home/sagemaker-user/Models/'
     DATA_DIR = '/home/sagemaker-user/Data/'
     
     # Load the SVD++ model
-    model_path = os.path.join(RECOMMENDATIONS_DIR, 'SVD++_best_model.pkl')
+    model_path = os.path.join(MODEL_DIR, 'SVD++_best_model.pkl')
     with open(model_path, 'rb') as f:
         recommendation_model = pickle.load(f)
     
@@ -39,7 +39,7 @@ def load_recommendation_system():
     index = faiss.read_index(faiss_index_path)
     
     # Load pre-generated recommendations
-    recommendations_path = os.path.join(RECOMMENDATIONS_DIR, 'recommendations.h5')
+    recommendations_path = os.path.join(DATA_DIR, 'recommendations.h5')
     loaded_recommendations = {}
     with h5py.File(recommendations_path, 'r') as hf:
         for user_id in hf.keys():

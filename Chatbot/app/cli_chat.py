@@ -60,6 +60,7 @@ def load_model_in_background():
     model_loaded = True
     print(Fore.GREEN + "Chat model loaded!\n" + Style.RESET_ALL)
 
+
 def ljust_unicode(s, width, fillchar=" "):
     """Left-align string, considering wide characters"""
     fill_width = width - wcswidth(s)
@@ -67,7 +68,8 @@ def ljust_unicode(s, width, fillchar=" "):
         return s + fillchar * fill_width
     else:
         return s
-        
+
+
 def load_user_passwords():
     """Load registered user password information"""
     users_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_passwords.pkl")
@@ -323,3 +325,159 @@ Assistant: Would you like to know more details about any of these products? If s
             recommendations_list = []
 
     return response.strip(), recommendations_list, user_keywords
+
+
+def main():
+    # Start model loading thread
+    threading.Thread(target=load_model_in_background, daemon=True).start()
+
+    # Load recommendation system data and display progress bar
+    print(Fore.YELLOW + "Loading recommendation system, please wait..." + Style.RESET_ALL)
+    for _ in tqdm(range(3), desc="Loading recommendation system"):
+        time.sleep(1)  # Simulate loading process
+
+    (
+        recommendation_model,
+        user_factors,
+        item_factors,
+        user_id_map,
+        item_id_map,
+        index,
+        loaded_recommendations,
+        filtered_data,
+        tfidf_vectorizer,
+        tfidf_matrix,
+    ) = load_recommendation_system()
+    print(Fore.GREEN + "Recommendation system loaded!\n" + Style.RESET_ALL)
+
+    # User login
+    user_id = login()
+    if not user_id:
+        sys.exit(1)
+
+    # Load and display hot products
+    top_5_df = load_hot_products()
+    display_hot_products(top_5_df)
+
+    # Chat loop
+    history = []
+    print(Fore.GREEN + "=== Let’s get started! Feel free to ask me anything or request product recommendations ===" + Style.RESET_ALL)
+    print("Enter 'exit' or 'quit' to end the chat.\n")
+
+    # Define keywords that trigger recommendations
+    recommendation_keywords = [
+        "recommend",
+        "recommendation",
+        "suggest",
+        "suggestion",
+        "interested in",
+        "looking for",
+        "want to buy",
+        "need",
+        "show me",
+        "find",
+        "product",
+        "item",
+    ]
+
+    while True:
+        question = input(Fore.BLUE + "You: " + Style.RESET_ALL).strip()
+        if question.lower() in ["exit", "quit"]:
+            print(Fore.GREEN + "Thanks for chatting with me! Have a great day!" + Style.RESET_ALL)
+            break
+        if not question:
+            print(Fore.YELLOW + "Please enter a valid question.\n" + Style.RESET_ALL)
+            continue
+
+        # Check if the input contains any recommendation keywords
+        if any(keyword in question.lower() for keyword in recommendation_keywords):
+            # Generate recommendation response and get recommendation list and user keywords
+            response, recommendations_list, user_keywords = generate_recommendation_response(
+                user_id,
+                user_factors,
+                item_factors,
+                user_id_map,
+                item_id_map,
+                index,
+                loaded_recommendations,
+                filtered_data,
+                tfidf_vectorizer,
+                tfidf_matrix,
+            )
+            print(Fore.MAGENTA + f"{response}\n" + Style.RESET_ALL)
+            # Do not add recommendation reply to history
+
+            # Check if the user wants to inquire about any product details
+            need_detail = True
+            while need_detail:
+                follow_up = input(Fore.BLUE + "You: " + Style.RESET_ALL).strip()
+                if follow_up.lower() in ["exit", "quit"]:
+                    print(Fore.GREEN + "Chat ended. Goodbye!" + Style.RESET_ALL)
+                    sys.exit(0)
+                elif follow_up.lower() in ["no", "not needed", "not now", "nope"]:
+                    print(Fore.GREEN + "Alright, if you have any other questions, feel free to ask!\n" + Style.RESET_ALL)
+                    need_detail = False  # Exit the product detail inquiry loop
+                elif follow_up.isdigit():
+                    selected_idx = int(follow_up)
+                    if 1 <= selected_idx <= len(recommendations_list):
+                        selected_asin = recommendations_list[selected_idx - 1]
+                        product_details = get_product_details(filtered_data, selected_asin)
+                        if product_details:
+                            details_response = "Assistant: Here are the details of the product:\n"
+                            for key, value in product_details.items():
+                                details_response += f"{key}: {value}\n"
+                            print(Fore.MAGENTA + f"{details_response}" + Style.RESET_ALL)
+                            # Only add user's choice and assistant's detail information to history
+                            history.append({"user": follow_up, "assistant": details_response})
+                            # Prompt user if they want to know about other products
+                            print(Fore.MAGENTA + "Assistant: Would you like to know more details about other products? If so, please enter the corresponding number (e.g., 2). If not, please enter 'no'.\n" + Style.RESET_ALL)
+                        else:
+                            print(Fore.RED + "Sorry, unable to find details of that product.\n" + Style.RESET_ALL)
+                    else:
+                        print(Fore.RED + f"Please enter a valid product number (1-{len(recommendations_list)}).\n" + Style.RESET_ALL)
+                else:
+                    # User input is not a number or 'no'; check if it contains product inquiry intent
+                    if any(word in follow_up.lower() for word in ["know", "inquire", "details", "information", "more about"]):
+                        # Try to extract number from input
+                        match = re.search(r'\d+', follow_up)
+                        if match:
+                            selected_idx = int(match.group())
+                            if 1 <= selected_idx <= len(recommendations_list):
+                                selected_asin = recommendations_list[selected_idx - 1]
+                                product_details = get_product_details(filtered_data, selected_asin)
+                                if product_details:
+                                    details_response = "Assistant: Here are the details of the product:\n"
+                                    for key, value in product_details.items():
+                                        details_response += f"{key}: {value}\n"
+                                    print(Fore.MAGENTA + f"{details_response}" + Style.RESET_ALL)
+                                    history.append({"user": follow_up, "assistant": details_response})
+                                    # Prompt user if they want to know about other products
+                                    print(Fore.MAGENTA + "Assistant: Would you like to know more details about other products? If so, please enter the corresponding number (e.g., 2). If not, please enter 'no'.\n" + Style.RESET_ALL)
+                                else:
+                                    print(Fore.RED + "Sorry, unable to find details of that product.\n" + Style.RESET_ALL)
+                            else:
+                                print(Fore.RED + f"Please enter a valid product number (1-{len(recommendations_list)}).\n" + Style.RESET_ALL)
+                        else:
+                            # Unable to extract number; return to Q&A mode
+                            print(Fore.GREEN + "Alright, if you have any other questions, feel free to ask!\n" + Style.RESET_ALL)
+                            need_detail = False  # Exit the product detail inquiry loop
+                    else:
+                        # Return to Q&A mode
+                        print(Fore.GREEN + "Alright, if you have any other questions, feel free to ask!\n" + Style.RESET_ALL)
+                        need_detail = False  # Exit the product detail inquiry loop
+            continue  # Return to main loop, waiting for new user input
+        else:
+            # Handle normal conversation
+            if not model_loaded:
+                print(Fore.YELLOW + "Chat model is loading, please wait..." + Style.RESET_ALL)
+                for _ in tqdm(range(3), desc="Loading chat model"):
+                    time.sleep(1)  # Simulate loading process
+                while not model_loaded:
+                    time.sleep(0.5)
+            answer = generate_answer(question, history, chat_tokenizer, chat_model)
+            history.append({"user": question, "assistant": answer})
+            print(Fore.MAGENTA + f"Assistant: {answer}\n" + Style.RESET_ALL)
+
+
+if __name__ == "__main__":
+    main()
