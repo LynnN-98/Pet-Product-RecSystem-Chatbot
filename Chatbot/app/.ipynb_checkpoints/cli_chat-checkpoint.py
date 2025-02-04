@@ -326,7 +326,6 @@ Assistant: Would you like to know more details about any of these products? If s
 
     return response.strip(), recommendations_list, user_keywords
 
-
 def main():
     # Start model loading thread
     threading.Thread(target=load_model_in_background, daemon=True).start()
@@ -477,7 +476,6 @@ def main():
             answer = generate_answer(question, history, chat_tokenizer, chat_model)
             history.append({"user": question, "assistant": answer})
             print(Fore.MAGENTA + f"Assistant: {answer}\n" + Style.RESET_ALL)
-
 
 if __name__ == "__main__":
     main()
