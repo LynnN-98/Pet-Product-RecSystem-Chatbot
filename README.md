@@ -11,6 +11,7 @@ This project is an AI-powered chatbot integrated with a **fine-tuned GPT-2 model
 - **Personalized Recommendations:** Receive tailored product recommendations based on your history.
 - **Trending Products:** View the most popular recommended products.
 - **Product Details Lookup:** Retrieve detailed information about recommended products.
+![Pet流程图](https://github.com/user-attachments/assets/82708d05-958f-4de7-adbf-04f90100a098)
 
 ---
 
@@ -74,13 +75,13 @@ You can run this chatbot **locally** or **inside a Docker container**.
 #### 1️⃣ Pull the Docker Image
 
 ```bash
-docker pull garick7777/llm_gpt-2:latest
+docker pull lynn7777/llm_gpt-2:latest
 ```
 
 #### 2️⃣ Run the Container
 
 ```bash
-docker run -it --rm garick7777/llm_gpt-2:latest
+docker run -it --rm lynn7777/llm_gpt-2:latest
 ```
 
 ---
@@ -125,7 +126,7 @@ docker run -it --rm garick7777/llm_gpt-2:latest
 - **Run with Docker:**
 
   ```bash
-  docker run -it --rm garick7777/llm_gpt-2:latest
+  docker run -it --rm lynn7777/llm_gpt-2:latest
   ```
 
 ### 2. Login or Register
